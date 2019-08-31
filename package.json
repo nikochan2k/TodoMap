@@ -8,16 +8,15 @@
     "watch": "webpack -w"
   },
   "dependencies": {
+    "@types/node": "^12.7.3",
+    "aws-sdk": "^2.521.0",
     "geojson": "^0.5.0",
     "openlayers": "^4.6.5"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.7",
     "@types/openlayers": "^4.6.17",
-    "copy-webpack-plugin": "^5.0.4",
-    "ts-loader": "^6.0.4",
-    "typescript": "^3.6.2",
-    "webpack": "^4.39.3",
-    "webpack-cli": "^3.3.7"
+    "parcel": "^1.12.3",
+    "typescript": "^3.6.2"
   }
 }
