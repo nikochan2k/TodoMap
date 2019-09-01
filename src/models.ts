@@ -1,6 +1,7 @@
 import { Point } from "geojson";
 
-interface Properties {
+export interface Properties {
+  id: string;
   title: string;
   datetime: string;
   author: string;
@@ -11,10 +12,10 @@ interface Properties {
 
 export interface PlaceProperties extends Properties {
   address: string;
-  photos: string[];
 }
 
 export interface PhotoProperties extends Properties {
+  placeId: string;
   direction: number;
 }
 

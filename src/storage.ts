@@ -22,7 +22,12 @@ export class Storage {
         Key: key
       })
       .promise();
-    return JSON.parse(res.Body as string);
+    return res.Body;
+  }
+
+  async getJSON(key: string) {
+    const body = await this.get(key);
+    return JSON.parse(body as string);
   }
 
   async list(recursive: boolean, prefix?: string) {

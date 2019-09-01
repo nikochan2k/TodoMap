@@ -1,4 +1,6 @@
 import * as ol from "openlayers";
+import storage from "./storage";
+import { PhotoProperties } from "./models";
 
 interface F {
   distance: number;
@@ -13,8 +15,8 @@ export class MyMap extends ol.Map {
     super(options);
 
     this.setup();
-    this.on("singleclick", (evt: ol.MapBrowserEvent) => {
-      this.setupSingleClickEvent(evt);
+    this.on("singleclick", async (evt: ol.MapBrowserEvent) => {
+      await this.setupSingleClickEvent(evt);
     });
   }
 
@@ -27,7 +29,7 @@ export class MyMap extends ol.Map {
     this.addOverlay(this.popupOverlay);
   }
 
-  private setupSingleClickEvent = (event: ol.MapBrowserEvent) => {
+  private setupSingleClickEvent = async (event: ol.MapBrowserEvent) => {
     const [clickedX, clickedY] = event.coordinate;
     const items: F[] = [];
     this.forEachFeatureAtPixel(
@@ -48,7 +50,17 @@ export class MyMap extends ol.Map {
       });
       const feature = items[0].feature;
       const props = feature.getProperties();
-      this.popup.innerHTML = `<p>${props.datetime}</p>`;
+      let innerHTML: string;
+      if (props.placeId) {
+        const photoProps = props as PhotoProperties;
+        const caption = props.title ? props.title : props.datetime;
+        const key = photoProps.placeId + "/" + photoProps.id + ".jpg";
+        const image = await storage.get(key);
+        innerHTML = `${caption}<br><img src="${image}" width="160" height="120">`;
+      } else {
+        innerHTML = props.title;
+      }
+      this.popup.innerHTML = innerHTML;
       this.popup.hidden = false;
       this.popupOverlay.setPosition(event.coordinate);
     } else {

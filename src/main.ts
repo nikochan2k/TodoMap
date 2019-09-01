@@ -7,8 +7,8 @@ const placeId = window.location.hash.substr(1);
 if (placeId) {
   let key = placeId + ".json";
   storage
-    .get(key)
-    .then(async entryJson => {
+    .getJSON(key)
+    .then(async placeJson => {
       const placeIcon =
         'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>';
       const cameraIcon =
@@ -21,7 +21,7 @@ if (placeId) {
         defaultDataProjection: "EPSG:4326",
         featureProjection: "EPSG:3857"
       });
-      const place = geojson.readFeature(entryJson);
+      const place = geojson.readFeature(placeJson);
       const placeStyle = new ol.style.Style({
         image: new ol.style.Icon({
           src: placeIcon
@@ -29,19 +29,25 @@ if (placeId) {
       });
       place.setStyle(placeStyle);
       features.push(place);
-      const extent = place.getGeometry().getExtent();
-      const x = (extent[0] + extent[2]) / 2;
-      const y = (extent[1] + extent[3]) / 2;
+      const point = place.getGeometry() as ol.geom.Point;
+      const [centerX, centerY] = point.getCoordinates();
       const cameraStyle = new ol.style.Style({
         image: new ol.style.Icon({
           src: cameraIcon
         })
       });
+      let [minX, minY, maxX, maxY] = [Number.MAX_VALUE, Number.MAX_VALUE, 0, 0];
       let items = await storage.list(false, placeId + "/");
       for (const item of items) {
         if (item.key.endsWith(".json")) {
-          const itemJson = await storage.get(item.key);
+          const itemJson = await storage.getJSON(item.key);
           const itemFeature = geojson.readFeature(itemJson);
+          const itemPoint = itemFeature.getGeometry() as ol.geom.Point;
+          const [x, y] = itemPoint.getCoordinates();
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (maxX < x) maxX = x;
+          if (maxY < y) maxY = y;
           const photoProp = itemFeature.getProperties() as PhotoProperties;
           let style: ol.style.Style;
           if (photoProp.direction == null) {
@@ -69,12 +75,19 @@ if (placeId) {
           style: placeStyle
         })
       ];
+      let zoom: number;
+      if (features.length <= 2) {
+        zoom = 18;
+      } else {
+        const distance = Math.max(maxX - minX, maxY - minY);
+        zoom = ~~Math.log2(40075016.68557849 / distance) - 1;
+      }
       new MyMap({
         target: "map",
         layers: layers,
         view: new ol.View({
-          center: [x, y],
-          zoom: 16
+          center: [centerX, centerY],
+          zoom: zoom
         })
       });
     })
